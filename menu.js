@@ -30,7 +30,7 @@ let drag = null;
 
 function pageHtml(board, extra) {
   const hits = board.spots.map(s => `<button class="hit" style="left:${s.l}%;top:${s.t}%;width:${s.w}%;height:${s.h}%" data-id="${s.id}" aria-label="${wines[s.id].name}"></button>`).join("");
-  return `<div class="page ${extra || ""}"><div class="title-mask"></div>${hits}<img src="${board.img}" alt=""><div class="edge"></div></div>`;
+  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}" alt=""><div class="edge"></div></div>`;
 }
 
 function render(incoming) {
@@ -38,7 +38,9 @@ function render(incoming) {
   const nxt = boards[Math.min(boards.length - 1, index + 1)];
   const prev = boards[Math.max(0, index - 1)];
   const under = incoming === "down" ? prev : nxt;
+  const logo = spread.querySelector(".logo");
   spread.innerHTML = pageHtml(under, "under") + pageHtml(cur, "leaf" + (incoming === "down" ? " down" : ""));
+  if (logo) spread.appendChild(logo);
 }
 
 function finish(nextIndex) {
