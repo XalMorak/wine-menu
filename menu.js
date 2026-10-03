@@ -5,7 +5,8 @@ const boards = [
   { id: "w1", group: "white", label: "1", img: "img/white-1.jpg", spots: gridSpots(31.4, 17.0, 66.8, 66.4, 5, 6, ["montmeyrac_white","tini_rose","tini_treb","tini_bianco","tini_grec","luigi_white","maipo_sb","maipo_moscato","kiwi_sb","crema","calvet_sb"]) },
   { id: "w2", group: "white", label: "2", img: "img/white-2.jpg", spots: gridSpots(31.6, 16.2, 66.6, 72.5, 3, 3, ["castel_rose","castel_chard","castel_sb","louis_bdx_w","porto_white","mondavi_chard","ferrande_white","piccini_white","wolf"], 3) },
   { id: "canned", group: "beer", label: "1", img: "img/canned.jpg", logo: false, spots: gridSpots(31.2, 17.6, 65.2, 66.8, 6, 5, ["niisel","altangobi","borgio","kaltenberg","sengur","heineken","terra","cass","asahi","tsingtao","airag"]) },
-  { id: "draft", group: "beer", label: "2", img: "img/draft.jpg", logo: false, spots: rowSpots(22.6, 17.2, 74.6, 64.5, ["eroogovi","gem","ooze","eve"]) }
+  { id: "draft", group: "beer", label: "2", img: "img/draft.jpg", logo: false, spots: rowSpots(22.6, 17.2, 74.6, 64.5, ["eroogovi","gem","ooze","eve"]) },
+  { id: "snacks", group: "snacks", label: "1", img: "img/snacks.jpg", logo: false, spots: [] }
 ];
 
 function gridSpots(x, y, w, h, colsTop, colsBot, ids, botCols) {
@@ -36,7 +37,7 @@ let drag = null;
 
 function pageHtml(board, extra) {
   const hits = board.spots.map(s => `<button class="hit" style="left:${s.l}%;top:${s.t}%;width:${s.w}%;height:${s.h}%" data-id="${s.id}" aria-label="${wines[s.id].name}"></button>`).join("");
-  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}?v=13" alt=""><div class="edge"></div></div>`;
+  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}?v=14" alt=""><div class="edge"></div></div>`;
 }
 
 function render(incoming) {
