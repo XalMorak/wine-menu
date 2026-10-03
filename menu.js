@@ -79,7 +79,7 @@ let drag = null;
 
 function pageHtml(board, extra) {
   const hits = board.spots.map(s => `<button class="hit" style="left:${s.l}%;top:${s.t}%;width:${s.w}%;height:${s.h}%" data-id="${s.id}" aria-label="${wines[s.id].name}"></button>`).join("");
-  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}" alt=""><div class="edge"></div></div>`;
+  return `<div class="page ${extra || ""}"><div class="title-mask"></div>${hits}<img src="${board.img}" alt=""><div class="edge"></div></div>`;
 }
 
 function render(incoming) {
@@ -157,8 +157,8 @@ function openWine(id) {
   sheet.classList.add("on");
   document.getElementById("close").onclick = close;
 }
-function close() { sheet.classList.remove("on"); }
-sheet.addEventListener("click", e => { if (e.target === sheet) close(); });
+function close() { sheet.classList.remove("on"); card.innerHTML = ""; }
+sheet.addEventListener("click", e => { if (e.target === sheet || e.target.id === "close") close(); });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") close();
   if (e.key === "ArrowUp" || e.key === "ArrowRight") turn(1);
