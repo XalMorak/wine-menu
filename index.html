@@ -3,45 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1a120c">
+<meta name="theme-color" content="#140e0b">
 <title>Wine Menu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --wood: #140e0b;
-    --cream: #f3e6cf;
-    --gold: #c4a46a;
-    --ink: #2a2118;
-    --muted: #7a6a58;
-  }
+  :root { --wood: #140e0b; --cream: #f3e6cf; --gold: #c4a46a; --ink: #2a2118; --muted: #7a6a58; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--wood); color: var(--cream); font-family: Manrope, sans-serif; }
-  body { min-height: 100dvh; display: flex; flex-direction: column; }
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px 6px; gap: 12px;
+  html, body { margin: 0; height: 100%; background: var(--wood); color: var(--cream); font-family: Manrope, sans-serif; overflow: hidden; }
+  .book {
+    height: 100dvh; width: 100%; display: flex; align-items: center; justify-content: center;
+    perspective: 1800px; touch-action: none;
   }
-  .brand { font-family: "Cormorant Garamond", serif; letter-spacing: .18em; font-size: 18px; font-weight: 600; }
-  .tabs { display: flex; gap: 6px; }
-  .tabs button, .pager button {
-    border: 1px solid rgba(196,164,106,.45); background: transparent; color: var(--cream);
-    border-radius: 999px; padding: 6px 12px; font: 600 12px/1 Manrope, sans-serif; letter-spacing: .04em;
+  .spread {
+    width: min(100vw, calc(100dvh * 16 / 9));
+    height: min(100dvh, calc(100vw * 9 / 16));
+    position: relative; transform-style: preserve-3d;
   }
-  .tabs button.on, .pager button.on { background: var(--gold); color: #1a120c; border-color: var(--gold); }
-  main { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0 10px 8px; }
-  .stage {
-    flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  .page {
+    position: absolute; inset: 0; transform-origin: center top;
+    transform-style: preserve-3d; border-radius: 4px;
+    background: #1a120c;
   }
-  .board { display: none; width: min(100%, calc((100dvh - 132px) * 16 / 9)); position: relative; }
-  .board.on { display: block; }
-  .board img { width: 100%; height: auto; display: block; border-radius: 6px; user-select: none; -webkit-user-drag: none; }
+  .page img { width: 100%; height: 100%; object-fit: contain; display: block; user-select: none; -webkit-user-drag: none; pointer-events: none; background: #140e0b; }
+  .page .shade {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to top, rgba(0,0,0,.45), transparent 42%);
+    opacity: 0;
+  }
   .hit {
-    position: absolute; border: 0; background: transparent; cursor: pointer; border-radius: 10px; padding: 0;
+    position: absolute; border: 0; background: transparent; padding: 0; border-radius: 10px; cursor: pointer;
   }
-  .hit:focus-visible, .hit:hover { outline: 2px solid rgba(196,164,106,.85); outline-offset: -3px; background: rgba(196,164,106,.12); }
-  .pager { display: flex; justify-content: center; gap: 8px; padding: 8px 0 4px; }
-  .hint { text-align: center; color: rgba(243,230,207,.55); font-size: 12px; padding-bottom: 8px; }
+  .under { z-index: 1; }
+  .leaf {
+    z-index: 2; transition: transform .72s cubic-bezier(.22,.7,.2,1);
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  }
+  .leaf.dragging { transition: none; }
   .sheet {
     position: fixed; inset: 0; background: rgba(8,5,3,.62); display: none; align-items: flex-end; justify-content: center;
     z-index: 20; padding: 16px;
@@ -50,8 +48,7 @@
   .card {
     width: min(520px, 100%); background: linear-gradient(180deg, #f7eedd, #efe2cc);
     color: var(--ink); border-radius: 18px 18px 14px 14px; padding: 22px 22px 18px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.45); position: relative;
-    animation: up .28s ease;
+    box-shadow: 0 20px 60px rgba(0,0,0,.45); position: relative; animation: up .28s ease;
   }
   @keyframes up { from { transform: translateY(16px); opacity: .4; } to { transform: none; opacity: 1; } }
   .card h2 { font-family: "Cormorant Garamond", serif; font-size: 34px; line-height: 1; margin: 0 36px 6px 0; font-weight: 600; }
@@ -66,28 +63,14 @@
   }
   .warn { font-size: 12px; color: #8d5a4a; margin-top: 12px; }
   @media (max-width: 720px) {
-    .brand { display: none; }
     .card h2 { font-size: 28px; }
     .price { font-size: 32px; }
   }
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">WINE MENU</div>
-  <div class="tabs">
-    <button class="on" data-group="red">RED WINE</button>
-    <button data-group="white">WHITE WINE</button>
-  </div>
-</header>
-<main>
-  <div class="stage" id="stage"></div>
-  <div class="pager" id="pager"></div>
-  <div class="hint">Лонх дээр дарж мэдээллийг нь харна уу</div>
-</main>
-<div class="sheet" id="sheet">
-  <div class="card" id="card"></div>
-</div>
+<div class="book" id="book"><div class="spread" id="spread"></div></div>
+<div class="sheet" id="sheet"><div class="card" id="card"></div></div>
 <script src="menu.js"></script>
 </body>
 </html>

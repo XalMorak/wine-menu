@@ -70,43 +70,66 @@ function listSpots(x, y, w, h, n, ids) {
   return ids.map((id, i) => ({ id, l: x + 0.6, t: y + rh * i + 0.5, w: w - 1.2, h: rh - 1.0 }));
 }
 
-const stage = document.getElementById("stage");
-const pager = document.getElementById("pager");
+const spread = document.getElementById("spread");
 const sheet = document.getElementById("sheet");
 const card = document.getElementById("card");
-let group = "red";
 let index = 0;
+let busy = false;
+let drag = null;
 
-function visible() { return boards.filter(b => b.group === group); }
-
-function render() {
-  const list = visible();
-  if (index >= list.length) index = 0;
-  stage.innerHTML = boards.map(b => {
-    const on = b.id === list[index].id;
-    const hits = b.spots.map(s => `<button class="hit" style="left:${s.l}%;top:${s.t}%;width:${s.w}%;height:${s.h}%" data-id="${s.id}" aria-label="${wines[s.id].name}"></button>`).join("");
-    return `<div class="board ${on ? "on" : ""}">${hits}<img src="${b.img}" alt="${b.group} wine ${b.label}"></div>`;
-  }).join("");
-  pager.innerHTML = list.map((b, i) => `<button class="${i === index ? "on" : ""}" data-i="${i}">${b.group === "red" ? "RED" : "WHITE"} ${b.label}</button>`).join("");
-  document.querySelectorAll(".tabs button").forEach(btn => btn.classList.toggle("on", btn.dataset.group === group));
+function pageHtml(board, extra) {
+  const hits = board.spots.map(s => `<button class="hit" style="left:${s.l}%;top:${s.t}%;width:${s.w}%;height:${s.h}%" data-id="${s.id}" aria-label="${wines[s.id].name}"></button>`).join("");
+  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}" alt=""><div class="shade"></div></div>`;
 }
 
-stage.addEventListener("click", e => {
+function render() {
+  const cur = boards[index];
+  const nxt = boards[index + 1];
+  spread.innerHTML = (nxt ? pageHtml(nxt, "under") : "") + pageHtml(cur, "leaf");
+}
+
+function setLeaf(angle) {
+  const leaf = spread.querySelector(".leaf");
+  if (!leaf) return;
+  const shade = leaf.querySelector(".shade");
+  leaf.style.transform = `rotateX(${angle}deg)`;
+  if (shade) shade.style.opacity = String(Math.min(0.7, Math.abs(angle) / 140));
+}
+
+function turn(dir) {
+  if (busy) return;
+  if (dir > 0 && index >= boards.length - 1) return;
+  if (dir < 0 && index <= 0) return;
+  busy = true;
+  const leaf = spread.querySelector(".leaf");
+  if (dir > 0) {
+    leaf.classList.remove("dragging");
+    leaf.style.transition = "transform .72s cubic-bezier(.22,.7,.2,1)";
+    setLeaf(-178);
+    leaf.addEventListener("transitionend", () => {
+      index += 1;
+      busy = false;
+      render();
+    }, { once: true });
+  } else {
+    index -= 1;
+    render();
+    const incoming = spread.querySelector(".leaf");
+    incoming.style.transition = "none";
+    setLeaf(-178);
+    requestAnimationFrame(() => {
+      incoming.style.transition = "transform .72s cubic-bezier(.22,.7,.2,1)";
+      setLeaf(0);
+      incoming.addEventListener("transitionend", () => { busy = false; }, { once: true });
+    });
+  }
+}
+
+spread.addEventListener("click", e => {
+  if (drag && drag.moved) return;
   const hit = e.target.closest(".hit");
-  if (!hit) return;
-  openWine(hit.dataset.id);
+  if (hit) openWine(hit.dataset.id);
 });
-pager.addEventListener("click", e => {
-  const btn = e.target.closest("button");
-  if (!btn) return;
-  index = Number(btn.dataset.i);
-  render();
-});
-document.querySelectorAll(".tabs button").forEach(btn => btn.addEventListener("click", () => {
-  group = btn.dataset.group;
-  index = 0;
-  render();
-}));
 
 function openWine(id) {
   const w = wines[id];
@@ -122,16 +145,39 @@ function openWine(id) {
 }
 function close() { sheet.classList.remove("on"); }
 sheet.addEventListener("click", e => { if (e.target === sheet) close(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") close();
+  if (e.key === "ArrowUp" || e.key === "ArrowRight") turn(1);
+  if (e.key === "ArrowDown" || e.key === "ArrowLeft") turn(-1);
+});
 
-let touchX = 0;
-stage.addEventListener("touchstart", e => { touchX = e.changedTouches[0].clientX; }, { passive: true });
-stage.addEventListener("touchend", e => {
-  const dx = e.changedTouches[0].clientX - touchX;
-  if (Math.abs(dx) < 50) return;
-  const list = visible();
-  index = dx < 0 ? Math.min(list.length - 1, index + 1) : Math.max(0, index - 1);
-  render();
+spread.addEventListener("pointerdown", e => {
+  if (busy || sheet.classList.contains("on")) return;
+  drag = { y: e.clientY, x: e.clientX, moved: false, id: e.pointerId };
+  spread.setPointerCapture(e.pointerId);
+});
+spread.addEventListener("pointermove", e => {
+  if (!drag || drag.id !== e.pointerId) return;
+  const dy = drag.y - e.clientY;
+  if (Math.abs(dy) > 8 || Math.abs(e.clientX - drag.x) > 8) drag.moved = true;
+  if (dy > 12 && index < boards.length - 1) {
+    const leaf = spread.querySelector(".leaf");
+    leaf.classList.add("dragging");
+    const h = spread.clientHeight || 1;
+    setLeaf(Math.max(-85, -dy / h * 90));
+  }
+});
+spread.addEventListener("pointerup", e => {
+  if (!drag || drag.id !== e.pointerId) return;
+  const dy = drag.y - e.clientY;
+  const leaf = spread.querySelector(".leaf");
+  if (leaf) leaf.classList.remove("dragging");
+  if (dy > 70) turn(1);
+  else if (dy < -70) turn(-1);
+  else setLeaf(0);
+  setTimeout(() => { if (drag) drag.moved = false; }, 40);
+  drag = null;
 });
 
 render();
+
