@@ -57,7 +57,11 @@
   .card h2 { font-family: "Cormorant Garamond", serif; font-size: 34px; line-height: 1; margin: 0 36px 6px 0; font-weight: 600; }
   .meta { color: var(--muted); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
   .price { font-family: "Cormorant Garamond", serif; color: #8a6a32; font-size: 40px; margin: 10px 0 8px; }
-  .card p { margin: 8px 0; line-height: 1.45; font-size: 15px; }
+  .card { max-height: min(86dvh, 760px); overflow: auto; }
+  .facts { margin: 12px 0 4px; }
+  .facts div { display: grid; grid-template-columns: 118px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid rgba(42,33,24,.1); }
+  .facts b { font-weight: 600; font-size: 12px; letter-spacing: .02em; color: #6d5b45; }
+  .facts span { font-size: 14px; line-height: 1.4; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .chip { background: rgba(42,33,24,.08); border-radius: 999px; padding: 6px 10px; font-size: 12px; }
   .x {
@@ -74,6 +78,7 @@
 <body>
 <div class="book" id="book"><div class="spread" id="spread"></div></div>
 <div class="sheet" id="sheet"><div class="card" id="card"></div></div>
-<script src="menu.js?v=5"></script>
+<script src="wines.js?v=6"></script>
+<script src="menu.js?v=6"></script>
 </body>
 </html>
