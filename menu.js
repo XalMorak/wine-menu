@@ -46,11 +46,38 @@ function render(incoming) {
   const prev = boards[Math.max(0, index - 1)];
   const under = incoming === "down" ? prev : nxt;
   const logo = spread.querySelector(".logo");
+  const dots = document.getElementById("dots");
+  const hint = document.getElementById("hint");
   spread.innerHTML = pageHtml(under, "under") + pageHtml(cur, "leaf" + (incoming === "down" ? " down" : ""));
   if (logo) {
     logo.hidden = boards[index].logo === false;
     spread.appendChild(logo);
   }
+  if (dots) spread.appendChild(dots);
+  if (hint) spread.appendChild(hint);
+  paintDots();
+}
+
+function paintDots() {
+  const dots = document.getElementById("dots");
+  if (!dots) return;
+  if (!dots.childElementCount) {
+    boards.forEach((_, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-label", "Хуудас " + (i + 1));
+      b.onclick = () => jump(i);
+      dots.appendChild(b);
+    });
+  }
+  [...dots.children].forEach((b, i) => b.classList.toggle("on", i === index));
+}
+
+function jump(i) {
+  if (busy || i === index) return;
+  hideHint();
+  index = i;
+  render();
 }
 
 function finish(nextIndex) {
@@ -103,10 +130,21 @@ spread.addEventListener("pointerup", e => {
     if (hit) openWine(hit.dataset.id);
     return;
   }
-  if (dy > 48) turn(1);
-  else if (dy < -48) turn(-1);
+  if (dy > 48) { hideHint(); turn(1); }
+  else if (dy < -48) { hideHint(); turn(-1); }
 });
 spread.addEventListener("pointercancel", () => { start = null; });
+
+function hideHint() {
+  const hint = document.getElementById("hint");
+  if (!hint) return;
+  hint.classList.remove("on");
+  try { localStorage.setItem("wine-hint", "1"); } catch (e) {}
+}
+if (!localStorage.getItem("wine-hint")) {
+  setTimeout(() => document.getElementById("hint").classList.add("on"), 400);
+  setTimeout(hideHint, 4600);
+}
 
 function openWine(id) {
   const w = wines[id];
