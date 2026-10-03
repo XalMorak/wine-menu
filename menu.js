@@ -3,7 +3,9 @@ const boards = [
   { id: "r2", group: "red", label: "2", img: "img/red-2.jpg", spots: gridSpots(1.6, 17.0, 96.6, 66.4, 6, 5, ["kiwi_pn","kiwi_shiraz","louis_merlot","calvet_cab","castel_merlot","castel_cab","castel_grenache","hans_pn","pinocchio","louis_bdx","calvet_cahors"]) },
   { id: "r3", group: "red", label: "3", img: "img/red-3.jpg", spots: listSpots(41.8, 16.2, 56.4, 67.6, 4, ["azahara","porto_red","mondavi_pn","ferrande_red"]) },
   { id: "w1", group: "white", label: "1", img: "img/white-1.jpg", spots: gridSpots(31.4, 17.0, 66.8, 66.4, 5, 6, ["montmeyrac_white","tini_rose","tini_treb","tini_bianco","tini_grec","luigi_white","maipo_sb","maipo_moscato","kiwi_sb","crema","calvet_sb"]) },
-  { id: "w2", group: "white", label: "2", img: "img/white-2.jpg", spots: gridSpots(31.6, 16.2, 66.6, 72.5, 3, 3, ["castel_rose","castel_chard","castel_sb","louis_bdx_w","porto_white","mondavi_chard","ferrande_white","piccini_white","wolf"], 3) }
+  { id: "w2", group: "white", label: "2", img: "img/white-2.jpg", spots: gridSpots(31.6, 16.2, 66.6, 72.5, 3, 3, ["castel_rose","castel_chard","castel_sb","louis_bdx_w","porto_white","mondavi_chard","ferrande_white","piccini_white","wolf"], 3) },
+  { id: "canned", group: "beer", label: "1", img: "img/canned.jpg", logo: false, spots: gridSpots(31.2, 17.6, 65.2, 66.8, 6, 5, ["niisel","altangobi","borgio","kaltenberg","sengur","heineken","terra","cass","asahi","tsingtao","airag"]) },
+  { id: "draft", group: "beer", label: "2", img: "img/draft.jpg", logo: false, spots: rowSpots(22.6, 17.2, 74.6, 64.5, ["eroogovi","gem","ooze","eve"]) }
 ];
 
 function gridSpots(x, y, w, h, colsTop, colsBot, ids, botCols) {
@@ -15,6 +17,10 @@ function gridSpots(x, y, w, h, colsTop, colsBot, ids, botCols) {
   top.forEach((id, i) => spots.push({ id, l: x + (w / colsTop) * i + 0.35, t: y + 0.4, w: w / colsTop - 0.7, h: rowH - 0.6 }));
   bot.forEach((id, i) => spots.push({ id, l: x + (w / bottomCols) * i + 0.35, t: y + rowH + 1.0, w: w / bottomCols - 0.7, h: rowH - 0.6 }));
   return spots;
+}
+function rowSpots(x, y, w, h, ids) {
+  const cw = w / ids.length;
+  return ids.map((id, i) => ({ id, l: x + cw * i + 0.4, t: y, w: cw - 0.8, h }));
 }
 function listSpots(x, y, w, h, n, ids) {
   const rh = h / n;
@@ -40,7 +46,10 @@ function render(incoming) {
   const under = incoming === "down" ? prev : nxt;
   const logo = spread.querySelector(".logo");
   spread.innerHTML = pageHtml(under, "under") + pageHtml(cur, "leaf" + (incoming === "down" ? " down" : ""));
-  if (logo) spread.appendChild(logo);
+  if (logo) {
+    logo.hidden = boards[index].logo === false;
+    spread.appendChild(logo);
+  }
 }
 
 function finish(nextIndex) {
@@ -100,17 +109,18 @@ spread.addEventListener("pointercancel", () => { start = null; });
 
 function openWine(id) {
   const w = wines[id];
+  const beer = w.drink === "beer";
   const rows = [
     ["Үйлдвэрлэгч", w.producer],
-    ["Ургацын бүс нутаг", w.region],
-    ["Усан үзмийн сорт", w.grape],
+    [beer ? "Гарал үүсэл" : "Ургацын бүс нутаг", w.region],
+    [beer ? "Найрлага" : "Усан үзмийн сорт", w.grape],
     ["Төрөл", w.kind],
     ["Шинж чанар", w.character],
     ["Хэрэглэх заавар", w.serve],
     ["Уух тохиромжтой хэм", w.temp]
   ].map(([k, v]) => `<div><b>${k}</b><span>${v}</span></div>`).join("");
   card.innerHTML = `<button class="x" id="close" aria-label="Хаах">×</button>
-    <div class="meta">Дарсны нэр</div>
+    <div class="meta">${beer ? "Нэр" : "Дарсны нэр"}</div>
     <h2>${w.name}</h2>
     <div class="price">${w.price}</div>
     <div class="facts">${rows}</div>
