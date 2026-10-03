@@ -37,7 +37,7 @@ let drag = null;
 
 function pageHtml(board, extra) {
   const hits = board.spots.map(s => `<button class="hit" style="left:${s.l}%;top:${s.t}%;width:${s.w}%;height:${s.h}%" data-id="${s.id}" aria-label="${wines[s.id].name}"></button>`).join("");
-  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}?v=14" alt=""><div class="edge"></div></div>`;
+  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}?v=15" alt=""><div class="back"></div><div class="shade"></div></div>`;
 }
 
 function render(incoming) {
@@ -70,7 +70,7 @@ function turn(dir) {
     const leaf = spread.querySelector(".leaf");
     const done = () => finish(index);
     leaf.addEventListener("animationend", done, { once: true });
-    setTimeout(done, 680);
+    setTimeout(done, 960);
     return;
   }
   const leaf = spread.querySelector(".leaf");
