@@ -105,8 +105,7 @@ function openWine(id) {
     ["Төрөл", w.kind],
     ["Шинж чанар", w.character],
     ["Хэрэглэх заавар", w.serve],
-    ["Уух тохиромжтой хэм", w.temp],
-    ["Хадгалалт ба насжилт", w.keep]
+    ["Уух тохиромжтой хэм", w.temp]
   ].map(([k, v]) => `<div><b>${k}</b><span>${v}</span></div>`).join("");
   card.innerHTML = `<button class="x" id="close" aria-label="Хаах">×</button>
     <div class="meta">Дарсны нэр</div>
