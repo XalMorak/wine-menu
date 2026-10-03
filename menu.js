@@ -79,21 +79,21 @@ let drag = null;
 
 function pageHtml(board, extra) {
   const hits = board.spots.map(s => `<button class="hit" style="left:${s.l}%;top:${s.t}%;width:${s.w}%;height:${s.h}%" data-id="${s.id}" aria-label="${wines[s.id].name}"></button>`).join("");
-  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}" alt=""><div class="shade"></div></div>`;
+  return `<div class="page ${extra || ""}">${hits}<img src="${board.img}" alt=""><div class="edge"></div></div>`;
 }
 
-function render() {
+function render(incoming) {
   const cur = boards[index];
-  const nxt = boards[index + 1];
-  spread.innerHTML = (nxt ? pageHtml(nxt, "under") : "") + pageHtml(cur, "leaf");
+  const nxt = boards[Math.min(boards.length - 1, index + 1)];
+  const prev = boards[Math.max(0, index - 1)];
+  const under = incoming === "down" ? prev : nxt;
+  spread.innerHTML = pageHtml(under, "under") + pageHtml(cur, "leaf" + (incoming === "down" ? " down" : ""));
 }
 
-function setLeaf(angle) {
-  const leaf = spread.querySelector(".leaf");
-  if (!leaf) return;
-  const shade = leaf.querySelector(".shade");
-  leaf.style.transform = `rotateX(${angle}deg)`;
-  if (shade) shade.style.opacity = String(Math.min(0.7, Math.abs(angle) / 140));
+function finish(nextIndex) {
+  index = nextIndex;
+  busy = false;
+  render();
 }
 
 function turn(dir) {
@@ -101,35 +101,49 @@ function turn(dir) {
   if (dir > 0 && index >= boards.length - 1) return;
   if (dir < 0 && index <= 0) return;
   busy = true;
-  const leaf = spread.querySelector(".leaf");
-  if (dir > 0) {
-    leaf.classList.remove("dragging");
-    leaf.style.transition = "transform .72s cubic-bezier(.22,.7,.2,1)";
-    setLeaf(-178);
-    leaf.addEventListener("transitionend", () => {
-      index += 1;
-      busy = false;
-      render();
-    }, { once: true });
-  } else {
+  if (dir < 0) {
     index -= 1;
-    render();
-    const incoming = spread.querySelector(".leaf");
-    incoming.style.transition = "none";
-    setLeaf(-178);
-    requestAnimationFrame(() => {
-      incoming.style.transition = "transform .72s cubic-bezier(.22,.7,.2,1)";
-      setLeaf(0);
-      incoming.addEventListener("transitionend", () => { busy = false; }, { once: true });
-    });
+    render("down");
+    const leaf = spread.querySelector(".leaf");
+    const done = () => finish(index);
+    leaf.addEventListener("animationend", done, { once: true });
+    setTimeout(done, 680);
+    return;
   }
+  const leaf = spread.querySelector(".leaf");
+  leaf.classList.add("up");
+  const next = index + 1;
+  let settled = false;
+  const done = () => {
+    if (settled) return;
+    settled = true;
+    finish(next);
+  };
+  leaf.addEventListener("animationend", done, { once: true });
+  setTimeout(done, 680);
 }
 
-spread.addEventListener("click", e => {
-  if (drag && drag.moved) return;
-  const hit = e.target.closest(".hit");
-  if (hit) openWine(hit.dataset.id);
+let start = null;
+spread.addEventListener("pointerdown", e => {
+  if (sheet.classList.contains("on")) return;
+  start = { x: e.clientX, y: e.clientY, t: Date.now() };
 });
+spread.addEventListener("pointerup", e => {
+  if (!start || sheet.classList.contains("on")) return;
+  const dx = e.clientX - start.x;
+  const dy = start.y - e.clientY;
+  const tap = Math.abs(dx) < 16 && Math.abs(dy) < 16;
+  start = null;
+  if (tap) {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const hit = el && el.closest ? el.closest(".hit") : null;
+    if (hit) openWine(hit.dataset.id);
+    return;
+  }
+  if (dy > 48) turn(1);
+  else if (dy < -48) turn(-1);
+});
+spread.addEventListener("pointercancel", () => { start = null; });
 
 function openWine(id) {
   const w = wines[id];
@@ -149,34 +163,6 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") close();
   if (e.key === "ArrowUp" || e.key === "ArrowRight") turn(1);
   if (e.key === "ArrowDown" || e.key === "ArrowLeft") turn(-1);
-});
-
-spread.addEventListener("pointerdown", e => {
-  if (busy || sheet.classList.contains("on")) return;
-  drag = { y: e.clientY, x: e.clientX, moved: false, id: e.pointerId };
-  spread.setPointerCapture(e.pointerId);
-});
-spread.addEventListener("pointermove", e => {
-  if (!drag || drag.id !== e.pointerId) return;
-  const dy = drag.y - e.clientY;
-  if (Math.abs(dy) > 8 || Math.abs(e.clientX - drag.x) > 8) drag.moved = true;
-  if (dy > 12 && index < boards.length - 1) {
-    const leaf = spread.querySelector(".leaf");
-    leaf.classList.add("dragging");
-    const h = spread.clientHeight || 1;
-    setLeaf(Math.max(-85, -dy / h * 90));
-  }
-});
-spread.addEventListener("pointerup", e => {
-  if (!drag || drag.id !== e.pointerId) return;
-  const dy = drag.y - e.clientY;
-  const leaf = spread.querySelector(".leaf");
-  if (leaf) leaf.classList.remove("dragging");
-  if (dy > 70) turn(1);
-  else if (dy < -70) turn(-1);
-  else setLeaf(0);
-  setTimeout(() => { if (drag) drag.moved = false; }, 40);
-  drag = null;
 });
 
 render();
